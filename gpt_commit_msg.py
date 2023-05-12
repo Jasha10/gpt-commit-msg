@@ -99,6 +99,8 @@ def main():
                             blank line, followed by a longer but concise description of the
                             change.""") + "\n\n"
                        )
+    parser.add_argument("--quiet", "-q", help="Suppress printing of cache hit counter info",
+                        action="store_true")
     global args
     args = parser.parse_args()
 
@@ -116,6 +118,11 @@ def main():
     else:
         args.model = "gpt-3.5-turbo"
 
+    if args.quiet:
+        quiet = True
+    else:
+        quiet = False
+
     llm = llmlib.Llm(llmlib.Openai(args.model), verbose=args.verbose)
 
     message = commit_message(llm, diff, args.prompt)
@@ -123,7 +130,8 @@ def main():
     wrapped_paragraphs = [textwrap.wrap(p) for p in paragraphs]
     wrapped = "\n".join("\n".join(p) for p in wrapped_paragraphs)
     print(wrapped)
-    print(f"({llm.counter_string()})")
+    if not quiet:
+        print(f"({llm.counter_string()})")
 
     return 0
 
