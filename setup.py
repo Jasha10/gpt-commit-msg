@@ -3,10 +3,12 @@ from setuptools import setup
 setup(
     name="gpt_commit_msg",
     version="0.1.2",
-    py_modules=['gpt_commit_msg'],
+    py_modules=['gpt_commit_msg', 'llmlib'],
     install_requires=[
+        "diskcache",
         "openai",
-        "tiktoken"
+        "tiktoken",
+        "appdirs",
     ],
     entry_points={
         'console_scripts': [
