@@ -1,6 +1,9 @@
 #!/bin/env python3
 
+from pathlib import Path
 import argparse
+import logging
+import os
 import re
 import subprocess
 import sys
@@ -13,12 +16,20 @@ max_token_count = {
     "gpt-3.5-turbo": 4097
 }
 
-def commit_message(llm, diff, prompt):
+def log(path: Path | None, text: str) -> None:
+    if path:
+        with path.open("a") as f:
+            f.write(text + "\n")
+
+def commit_message(llm, diff, prompt, logfile: Path | None = None):
     # Simple case. No summarizing needed.
     tcount = llm.get_num_tokens(prompt + diff)
+    logging.info(f"tokens: {tcount}")
     if tcount <= max_token_count[args.model]:
+        logging.info(f"Sending prompt + diff:\n{prompt + diff}")
         return llm.ask(prompt + diff)
 
+    logging.warning(f"diff too long. {tcount} tokens. Summarizing...")
     summaries = summarize(llm, diff)
     result = ["## More Detail"] + summaries
     overall_summary = "\n\n".join(summaries)
@@ -101,6 +112,8 @@ def main():
                        )
     parser.add_argument("--quiet", "-q", help="Suppress printing of cache hit counter info",
                         action="store_true")
+    parser.add_argument("--logfile", "-l", help="Log file to use",
+                        action="store", required=False)
     global args
     args = parser.parse_args()
 
@@ -123,9 +136,15 @@ def main():
     else:
         quiet = False
 
+    if args.logfile:
+        logging.basicConfig(filename=os.path.expanduser(args.logfile), level=logging.INFO)
+
+    logging.info(f"Got args: {args}")
+
     llm = llmlib.Llm(llmlib.Openai(args.model), verbose=args.verbose)
 
     message = commit_message(llm, diff, args.prompt)
+    logging.info(f"GPT returned:\n{message}")
     paragraphs = message.splitlines()
     wrapped_paragraphs = [textwrap.wrap(p) for p in paragraphs]
     wrapped = "\n".join("\n".join(p) for p in wrapped_paragraphs)
