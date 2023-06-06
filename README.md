@@ -12,7 +12,11 @@ to create detailed and informative commit messages for your source control.
 ## Installation
 1. Install the program:
 ```sh
-pip3 install gpt-commit-msg
+pip3 install .
+```
+OR
+```
+pipx install .
 ```
 2. Set your OpenAI API key as an environment variable:
 ```sh
