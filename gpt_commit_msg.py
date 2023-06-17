@@ -101,6 +101,17 @@ def main():
                         action="store_true")
     parser.add_argument("--4", "-4", help="Use GPT4 (slower, costs more money)",
                         dest='gpt4', action="store_true")
+    def parse_temperature(value: str) -> float:
+        temp = float(value)
+        if 0 <= temp <= 2:
+            return temp
+        raise argparse.ArgumentTypeError(f"Temperature must be between 0 and 2, not {value}")
+    parser.add_argument("--temperature", "-t", help=("What sampling temperature to use, between 0 and 2."
+                                                     " Higher values like 0.8 will make the output more random,"
+                                                     " while lower values like 0.2 will make it more focused and deterministic."
+                                                     " Default: 0.0 (to give deterministic and precise output)."),
+                        action="store", metavar="[0-2]", type=parse_temperature,
+                        default=0.0)
     parser.add_argument("--verbose", "-v", help="Print verbose output",
                         action="store_true")
     parser.add_argument("--prompt", "-p", help="Custom prompt to use", action="store",
@@ -130,7 +141,7 @@ def main():
         args.model = "gpt-4"
     else:
         args.model = "gpt-3.5-turbo"
-
+    
     if args.quiet:
         quiet = True
     else:
@@ -141,7 +152,8 @@ def main():
 
     logging.info(f"Got args: {args}")
 
-    llm = llmlib.Llm(llmlib.Openai(args.model), verbose=args.verbose)
+    llm = llmlib.Llm(llmlib.Openai(model=args.model, temperature=args.temperature),
+                     verbose=args.verbose)
 
     message = commit_message(llm, diff, args.prompt)
     logging.info(f"GPT returned:\n{message}")

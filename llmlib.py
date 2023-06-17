@@ -57,10 +57,11 @@ class Api:
 
 class Openai(Api):
     """API to OpenAI's GPT model."""
-    def __init__(self, model="gpt-3.5-turbo", verbose=False, api_key=None):
+    def __init__(self, *, temperature: float, model="gpt-3.5-turbo", verbose=False, api_key=None):
         openai.api_key = api_key or os.environ.get("OPENAI_API_KEY")
         self.model = model
         self.verbose = verbose
+        self.temperature = temperature
 
     def ask(self, prompt):
         """Ask the model a question."""
@@ -69,7 +70,8 @@ class Openai(Api):
                 model=self.model,
                 messages=[
                     {"role": "user", "content": prompt}
-                ]
+                ],
+                temperature=self.temperature,
             )
             result = response.choices[0]['message']['content']
         except openai.error.InvalidRequestError as exception:
