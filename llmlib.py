@@ -98,10 +98,13 @@ class Openai(Api):
 
 class Llm:
     """Interface to a large language model (LLM)."""
-    def __init__(self, api : Api, verbose=False):
+    def __init__(self, api : Api, verbose=False, skip_cache: bool = True):
         self.api = api
         self.verbose = verbose
-        self.cache = Cache(appdirs.user_cache_dir("llmlib"))
+        if skip_cache:
+            self.cache = None
+        else:
+            self.cache = Cache(appdirs.user_cache_dir("llmlib"))
         self.counters = {}
         log_dir = appdirs.user_log_dir("llmlib")
         log_path = os.path.join(log_dir, "log.txt")
@@ -125,15 +128,21 @@ class Llm:
 
         assert len(prompt) > 25
 
-        cache_key = ("ask", repr(self.api), prompt)
-        result = self.cache.get(cache_key)
-        self._increment_counter(f"ask {self.api!r}")
+        if self.cache is not None:
+            cache_key = ("ask", repr(self.api), prompt)
+            result = self.cache.get(cache_key)
+            self._increment_counter(f"ask {self.api!r}")
 
-        if result:
-            self._increment_counter(f"ask-hit {self.api!r}")
-            cached = " (cached)"
+            if result:
+                self._increment_counter(f"ask-hit {self.api!r}")
+                cached = " (cached)"
+            else:
+                self._increment_counter(f"ask-miss {self.api!r}")
+                result = self.api.ask(prompt)
+                cached = ""
+
+            self.cache[cache_key] = result
         else:
-            self._increment_counter(f"ask-miss {self.api!r}")
             result = self.api.ask(prompt)
             cached = ""
 
@@ -141,7 +150,6 @@ class Llm:
         if self.verbose:
             print(f"Response{cached}: {result[:60]!r}")
 
-        self.cache[cache_key] = result
 
         return result
 

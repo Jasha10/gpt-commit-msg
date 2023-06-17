@@ -125,6 +125,8 @@ def main():
                         action="store_true")
     parser.add_argument("--logfile", "-l", help="Log file to use",
                         action="store", required=False)
+    parser.add_argument("--skip-cache", "-s", help="Skip cache",
+                        action="store_true")
     global args
     args = parser.parse_args()
 
@@ -153,7 +155,7 @@ def main():
     logging.info(f"Got args: {args}")
 
     llm = llmlib.Llm(llmlib.Openai(model=args.model, temperature=args.temperature),
-                     verbose=args.verbose)
+                     verbose=args.verbose, skip_cache=args.skip_cache)
 
     message = commit_message(llm, diff, args.prompt)
     logging.info(f"GPT returned:\n{message}")
