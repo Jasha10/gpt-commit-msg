@@ -1,0 +1,2 @@
+- [ ] add an option to failfast if the text is too big to fit in one gpt context
+- [ ] figure out how to successively revise a commit message by giving feedback through conversation chat
