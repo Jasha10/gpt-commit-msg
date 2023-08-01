@@ -19,29 +19,48 @@ def log(path: Path | None, text: str) -> None:
         with path.open("a") as f:
             f.write(text + "\n")
 
-def commit_message(llm, diff, prompt, logfile: Path | None = None):
+
+def commit_message(
+    llm, diff, prompt, logfile: Path | None = None, fail_on_long_diff: bool = False
+):
     # Simple case. No summarizing needed.
     tcount = llm.get_num_tokens(prompt + diff)
     logging.info(f"tokens: {tcount}")
     if tcount <= max_token_count[args.model]:
         logging.info(f"Sending prompt + diff:\n{prompt + diff}")
         return llm.ask(prompt + diff)
+    else:
+        # Prompt+diff is too long to fit in the model's context window.
 
-    logging.warning(f"diff too long. {tcount} tokens. Summarizing...")
-    summaries = summarize(llm, diff)
-    result = ["## More Detail"] + summaries
-    overall_summary = "\n\n".join(summaries)
-    while True:
-        if llm.get_num_tokens(prompt + overall_summary) <= max_token_count[args.model]:
-            break
-        # Summarize the summary
-        summaries = summarize(llm, overall_summary,
-                prompt="Make an unordered list that summarizes the changes described below.n\n")
-        result = summaries + ["## More Detail"] + result
-        overall_summary = "\n\n".join(summaries)
+        if fail_on_long_diff:
+            # raise error: diff is too long to fit in the model's context window
+            raise ValueError(
+                f"diff too long. {tcount} tokens. Max: {max_token_count[args.model]}"
+            )
 
-    result.insert(0, llm.ask(prompt + overall_summary))
-    return "\n\n".join(result)
+        else:
+            # Summarize the diff using several calls to the model
+            logging.warning(f"diff too long. {tcount} tokens. Summarizing...")
+            summaries = summarize(llm, diff)
+            result = ["## More Detail"] + summaries
+            overall_summary = "\n\n".join(summaries)
+            while True:
+                if (
+                    llm.get_num_tokens(prompt + overall_summary)
+                    <= max_token_count[args.model]
+                ):
+                    break
+                # Summarize the summary
+                summaries = summarize(
+                    llm,
+                    overall_summary,
+                    prompt="Make an unordered list that summarizes the changes described below.n\n",
+                )
+                result = summaries + ["## More Detail"] + result
+                overall_summary = "\n\n".join(summaries)
+
+            result.insert(0, llm.ask(prompt + overall_summary))
+            return "\n\n".join(result)
 
 
 def summarize(
@@ -164,6 +183,12 @@ def main():
         "--logfile", "-l", help="Log file to use", action="store", required=False
     )
     parser.add_argument("--skip-cache", "-s", help="Skip cache", action="store_true")
+    parser.add_argument(
+        "--fail-on-long-diff",
+        "-f",
+        action="store_true",
+        help="Fail if the prompt+diff is too long for the model's context window",
+    )
     global args
     args = parser.parse_args()
 
@@ -198,7 +223,9 @@ def main():
         skip_cache=args.skip_cache,
     )
 
-    message = commit_message(llm, diff, args.prompt)
+    message = commit_message(
+        llm, diff, args.prompt, fail_on_long_diff=args.fail_on_long_diff
+    )
     logging.info(f"GPT returned:\n{message}")
     paragraphs = message.splitlines()
     wrapped_paragraphs = [textwrap.wrap(p) for p in paragraphs]
