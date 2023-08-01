@@ -20,9 +20,7 @@ def log(path: Path | None, text: str) -> None:
             f.write(text + "\n")
 
 
-def commit_message(
-    llm, diff, prompt, logfile: Path | None = None, fail_on_long_diff: bool = False
-):
+def commit_message(llm, diff, prompt, fail_on_long_diff: bool = False):
     # Simple case. No summarizing needed.
     tcount = llm.get_num_tokens(prompt + diff)
     logging.info(f"tokens: {tcount}")
