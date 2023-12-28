@@ -3,18 +3,14 @@ from setuptools import setup
 setup(
     name="gpt_commit_msg",
     version="0.1.2",
-    py_modules=['gpt_commit_msg', 'llmlib'],
+    py_modules=["gpt_commit_msg", "llmlib"],
     install_requires=[
         "diskcache",
         "openai",
         "tiktoken",
         "appdirs",
     ],
-    entry_points={
-        'console_scripts': [
-            'gpt-commit-msg=gpt_commit_msg:main'
-        ]
-    },
+    entry_points={"console_scripts": ["gpt-commit-msg=gpt_commit_msg:main"]},
     author="Tim Newsome",
     author_email="tim@casualhacker.net",
     description="A package for generating commit messages using GPT",
@@ -33,4 +29,3 @@ setup(
     ],
     python_requires=">=3.6",
 )
-
