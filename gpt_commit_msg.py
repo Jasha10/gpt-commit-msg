@@ -1,6 +1,5 @@
 #!/bin/env python3
 
-from pathlib import Path
 import argparse
 import logging
 import os
@@ -8,6 +7,7 @@ import re
 import subprocess
 import sys
 import textwrap
+from pathlib import Path
 
 import llmlib
 
