@@ -11,6 +11,9 @@ import textwrap
 from diskcache import Cache
 import appdirs
 import openai
+from openai import OpenAI
+
+client = OpenAI(os.environ.get("OPENAI_API_KEY"))
 import tiktoken
 
 def split_separator(text, separator):
@@ -57,8 +60,7 @@ class Api:
 
 class Openai(Api):
     """API to OpenAI's GPT model."""
-    def __init__(self, *, temperature: float, model="gpt-3.5-turbo", verbose=False, api_key=None):
-        openai.api_key = api_key or os.environ.get("OPENAI_API_KEY")
+    def __init__(self, *, temperature: float, model="gpt-3.5-turbo", verbose=False):
         self.model = model
         self.verbose = verbose
         self.temperature = temperature
@@ -66,15 +68,13 @@ class Openai(Api):
     def ask(self, prompt):
         """Ask the model a question."""
         try:
-            response = openai.ChatCompletion.create(
-                model=self.model,
-                messages=[
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=self.temperature,
-            )
+            response = client.chat.completions.create(model=self.model,
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            temperature=self.temperature)
             result = response.choices[0]['message']['content']
-        except openai.error.InvalidRequestError as exception:
+        except openai.InvalidRequestError as exception:
             exception._message += f"; computed token length={self.token_count(prompt)}"
             raise
         return result
