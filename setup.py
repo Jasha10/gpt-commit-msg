@@ -10,6 +10,14 @@ setup(
         "tiktoken",
         "appdirs",
     ],
+    extras_require={
+        "dev": [
+            "mypy",
+            "black",
+            "isort",
+            "ruff",
+        ],
+    },
     entry_points={"console_scripts": ["gpt-commit-msg=gpt_commit_msg:main"]},
     author="Tim Newsome",
     author_email="tim@casualhacker.net",
