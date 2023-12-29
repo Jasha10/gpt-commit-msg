@@ -13,7 +13,7 @@ import openai
 from diskcache import Cache
 from openai import OpenAI
 
-client = OpenAI(os.environ.get("OPENAI_API_KEY"))
+client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 import tiktoken
 
 
@@ -79,7 +79,7 @@ class Openai(Api):
                 messages=[{"role": "user", "content": prompt}],
                 temperature=self.temperature,
             )
-            result = response.choices[0]["message"]["content"]
+            result = response.choices[0].message.content
         except openai.InvalidRequestError as exception:
             exception._message += f"; computed token length={self.token_count(prompt)}"
             raise
