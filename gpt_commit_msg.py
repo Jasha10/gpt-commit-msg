@@ -11,7 +11,12 @@ from pathlib import Path
 
 import llmlib
 
-max_token_count = {"gpt-4": 8192, "gpt-3.5-turbo": 4097}
+max_token_count = {
+    # https://platform.openai.com/docs/models/gpt-4-turbo-and-gpt-4
+    "gpt-3.5-turbo": 16385,
+    "gpt-4": 8192,
+    "gpt-4-turbo": 128000,
+}
 
 
 def log(path: Path | None, text: str) -> None:
@@ -123,12 +128,12 @@ def main():
     parser.add_argument(
         "--git", "-g", help="Use staged git changes.", action="store_true"
     )
+
     parser.add_argument(
-        "--4",
-        "-4",
-        help="Use GPT4 (slower, costs more money)",
-        dest="gpt4",
-        action="store_true",
+        "--model",
+        choices=["gpt-4", "gpt-3.5-turbo", "gpt-4-turbo"],
+        required=True,
+        help="Which model to use",
     )
 
     def parse_temperature(value: str) -> float:
@@ -197,11 +202,6 @@ def main():
     if len(diff) < 5:
         print("Empty diff.")
         return 1
-
-    if args.gpt4:
-        args.model = "gpt-4"
-    else:
-        args.model = "gpt-3.5-turbo"
 
     if args.quiet:
         quiet = True
